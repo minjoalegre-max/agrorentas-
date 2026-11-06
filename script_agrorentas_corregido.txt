@@ -1,0 +1,363 @@
+/* AgroRentas - interfaz funcional local.
+   Los usuarios, anuncios y calificaciones se guardan SOLO en este navegador.
+   No usar contraseñas reales. Para producción se requiere backend y autenticación segura. */
+const KEYS = {
+  listings: "agrorentas_listings_v1",
+  users: "agrorentas_users_demo_v1",
+  session: "agrorentas_session_v1",
+  ratings: "agrorentas_ratings_v1"
+};
+
+const sampleMachines = [
+  {id:"sample-tractor-1",name:"Tractor agrícola",type:"Tractor",specs:"75 HP · 4x4",location:"Comarapa, zona centro",availability:"Disponible",price:450,period:"día",owner:"Propietario de ejemplo",phone:"",description:"Ejemplo de ficha para un tractor agrícola. Confirma con el propietario las condiciones y la disponibilidad.",image:"https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=1000&q=80",sample:true},
+  {id:"sample-harvester-1",name:"Cosechadora",type:"Cosechadora",specs:"Características a confirmar",location:"Comarapa, zona sur",availability:"Disponible",price:1200,period:"día",owner:"Propietario de ejemplo",phone:"",description:"Maquinaria para labores de cosecha. Solicita información sobre el equipo, la zona de trabajo y el precio final.",image:"https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1000&q=80",sample:true},
+  {id:"sample-sprayer-1",name:"Fumigadora agrícola",type:"Fumigadora",specs:"Capacidad a confirmar",location:"Comarapa, zona norte",availability:"Disponible",price:300,period:"día",owner:"Propietario de ejemplo",phone:"",description:"Ejemplo de equipo para fumigación agrícola. Confirma la capacidad, las condiciones de uso y su disponibilidad.",image:"https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=1000&q=80",sample:true},
+  {id:"sample-seeder-1",name:"Sembradora",type:"Sembradora",specs:"Características a confirmar",location:"Comarapa, zona este",availability:"Disponible",price:500,period:"día",owner:"Propietario de ejemplo",phone:"",description:"Equipo de ejemplo para labores de siembra. Contacta al propietario para confirmar los detalles.",image:"https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1000&q=80",sample:true},
+  {id:"sample-truck-1",name:"Camión para transporte agrícola",type:"Camión",specs:"Capacidad a confirmar",location:"Comarapa, zona centro",availability:"No disponible",price:600,period:"día",owner:"Propietario de ejemplo",phone:"",description:"Ejemplo de ficha de transporte agrícola. La disponibilidad y la tarifa deben confirmarse.",image:"https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&w=1000&q=80",sample:true},
+  {id:"sample-tractor-2",name:"Tractor mediano",type:"Tractor",specs:"Potencia a confirmar",location:"Comarapa, zona oeste",availability:"Disponible",price:420,period:"día",owner:"Propietario de ejemplo",phone:"",description:"Ficha demostrativa. Pregunta por el estado del equipo y el trabajo que puede realizar.",image:"https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=1000&q=80",sample:true}
+];
+
+let currentPage = "inicio";
+let authMode = "login";
+let chosenPhoto = "";
+
+const $ = selector => document.querySelector(selector);
+const $$ = selector => [...document.querySelectorAll(selector)];
+
+function readJSON(key, fallback) {
+  try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
+  catch (error) { console.warn("No se pudieron leer datos del navegador.", error); return fallback; }
+}
+function writeJSON(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+  catch (error) { toast("No se pudo guardar la información. Intenta con una foto más pequeña."); return false; }
+}
+function getListings() { return [...sampleMachines, ...readJSON(KEYS.listings, [])]; }
+function getOwnListings() { return readJSON(KEYS.listings, []); }
+function getUsers() { return readJSON(KEYS.users, []); }
+function getUser() {
+  const session = readJSON(KEYS.session, null);
+  return session ? getUsers().find(user => user.id === session.id) || null : null;
+}
+function safeText(value = "") {
+  return String(value).replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+}
+function toast(message) {
+  const el = $("#toast");
+  el.textContent = message;
+  el.classList.add("show");
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => el.classList.remove("show"), 3300);
+}
+function ratingsFor(id) {
+  const all = readJSON(KEYS.ratings, {});
+  return all[id] || [];
+}
+function ratingLabel(id) {
+  const list = ratingsFor(id);
+  if (!list.length) return "Sin calificaciones";
+  const average = list.reduce((sum, item) => sum + item.stars, 0) / list.length;
+  return average.toFixed(1) + " (" + list.length + ")";
+}
+function priceLabel(machine) {
+  if (machine.price === null || machine.price === undefined || machine.price === "") return "Precio a convenir";
+  return "Bs. " + Number(machine.price).toLocaleString("es-BO") + `<small>/ ${safeText(machine.period || "día")}</small>`;
+}
+function fallbackEmoji(type) {
+  if (type === "Cosechadora") return "🌾";
+  if (type === "Fumigadora") return "💧";
+  if (type === "Sembradora") return "🌱";
+  if (type === "Camión") return "🚚";
+  return "🚜";
+}
+function machineCard(machine) {
+  const available = machine.availability === "Disponible";
+  const image = machine.image ? `<img loading="lazy" src="${safeText(machine.image)}" alt="${safeText(machine.name)}" onerror="this.remove();this.parentElement.classList.add('image-fallback');this.parentElement.insertAdjacentHTML('afterbegin','<span class=&quot;fallback-emoji&quot;>${fallbackEmoji(machine.type)}</span>')">` : `<span class="fallback-emoji">${fallbackEmoji(machine.type)}</span>`;
+  return `<article class="machine-card">
+    <button class="machine-image" data-detail="${safeText(machine.id)}" aria-label="Ver ${safeText(machine.name)}">${image}<span class="type-badge">${safeText(machine.type)}</span></button>
+    <div class="machine-body">
+      <span class="availability ${available ? "" : "off"}">${available ? "Disponible" : "No disponible"}</span>
+      <h3>${safeText(machine.name)}</h3>
+      <p class="machine-owner">Publicado por ${safeText(machine.owner || "Propietario")}</p>
+      <div class="machine-meta"><span class="meta-pill">⌖ ${safeText(machine.location || "Por confirmar")}</span><span class="meta-pill">★ ${safeText(ratingLabel(machine.id))}</span></div>
+      <div class="machine-foot"><div class="machine-price">${priceLabel(machine)}</div><button class="mini-button" data-detail="${safeText(machine.id)}">Ver detalles →</button></div>
+    </div>
+  </article>`;
+}
+function renderFeatured() {
+  const items = getListings().filter(item => item.availability === "Disponible").slice(0, 3);
+  $("#featuredGrid").innerHTML = items.map(machineCard).join("");
+}
+function renderCatalog() {
+  const query = ($("#catalogSearch").value || "").trim().toLowerCase();
+  const type = $("#catalogType").value;
+  const location = ($("#catalogLocation").value || "").trim().toLowerCase();
+  const availability = $("#catalogAvailability").value;
+  const list = getListings().filter(item => {
+    const searchable = `${item.name} ${item.type} ${item.specs || ""} ${item.description || ""}`.toLowerCase();
+    return (!query || searchable.includes(query))
+      && (!type || item.type === type)
+      && (!location || (item.location || "").toLowerCase().includes(location))
+      && (!availability || item.availability === availability);
+  });
+  $("#catalogGrid").innerHTML = list.map(machineCard).join("");
+  $("#resultsCount").textContent = list.length + (list.length === 1 ? " equipo" : " equipos");
+  $("#catalogSummary").textContent = list.length ? "Selecciona una maquinaria para revisar su información y contacto." : "No hay resultados para esta búsqueda.";
+  $("#catalogEmpty").classList.toggle("hidden", list.length > 0);
+}
+function navigate(page) {
+  if (page === "publicar" && !getUser()) {
+    toast("Crea una cuenta de demostración o inicia sesión para publicar.");
+    page = "cuenta";
+  }
+  currentPage = page;
+  $$(".page").forEach(section => section.classList.toggle("hidden", section.id !== "page-" + page));
+  $$(".nav-link").forEach(button => button.classList.toggle("active", button.dataset.page === page));
+  $("#mainNav").classList.remove("open");
+  if (page === "catalogo") renderCatalog();
+  if (page === "inicio") renderFeatured();
+  if (page === "cuenta") updateAccountPage();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+function openDetails(id) {
+  const machine = getListings().find(item => item.id === id);
+  if (!machine) return toast("No encontramos esa publicación.");
+  const available = machine.availability === "Disponible";
+  const custom = !machine.sample;
+  $("#detailContent").innerHTML = `
+    <div class="section detail-layout">
+      <div class="detail-photo">${machine.image ? `<img src="${safeText(machine.image)}" alt="${safeText(machine.name)}" onerror="this.remove();this.parentElement.classList.add('image-fallback');this.parentElement.insertAdjacentHTML('beforeend','<span class=&quot;fallback-emoji&quot;>🚜</span>')">` : `<span class="fallback-emoji">🚜</span>`}</div>
+      <div class="detail-card">
+        <span class="availability ${available ? "" : "off"}">${available ? "Disponible" : "No disponible"}</span>
+        ${machine.sample ? `<span class="sample-label">ANUNCIO DE EJEMPLO</span>` : ""}
+        <h1>${safeText(machine.name)}</h1><p>Publicado por <b>${safeText(machine.owner || "Propietario")}</b></p>
+        <div class="detail-price">${priceLabel(machine)}</div>
+        <div class="detail-info">
+          <div><small>Tipo de equipo</small><b>${safeText(machine.type)}</b></div>
+          <div><small>Características</small><b>${safeText(machine.specs || "Consultar")}</b></div>
+          <div><small>Ubicación</small><b>${safeText(machine.location || "Por confirmar")}</b></div>
+          <div><small>Disponibilidad</small><b>${safeText(machine.availability)}</b></div>
+        </div>
+        <h3>Descripción</h3><p>${safeText(machine.description || "Consulta con el propietario para conocer más detalles.")}</p>
+        <div class="detail-actions">
+          ${machine.phone && String(machine.phone).replace(/\D/g,"").length >= 8 ? `<a class="btn whatsapp" target="_blank" rel="noopener" href="https://wa.me/${String(machine.phone).replace(/\D/g,"")}?text=${encodeURIComponent("Hola, vi tu maquinaria " + machine.name + " en AgroRentas y quisiera consultar las condiciones del alquiler.")}">Contactar por WhatsApp ↗</a>` : `<button class="btn primary" data-contact-missing="${safeText(machine.id)}">Consultar contacto</button>`}
+          ${custom && getUser() && machine.ownerId === getUser().id ? `<button class="btn secondary" data-toggle-listing="${safeText(machine.id)}">${available ? "Marcar no disponible" : "Marcar disponible"}</button>` : ""}
+        </div>
+        ${machine.sample ? `<p class="sample-warning">Esta ficha es demostrativa: no contiene un contacto real y no confirma el precio ni la disponibilidad.</p>` : ""}
+        <div class="rating-box"><h3>Calificaciones de usuarios</h3><div class="rating-average">Promedio de prueba: ${safeText(ratingLabel(machine.id))}</div>
+          <div class="stars">${[1,2,3,4,5].map(n => `<button class="star-btn" data-rate="${n}" data-rate-id="${safeText(machine.id)}" aria-label="${n} estrellas">★</button>`).join("")}</div>
+          <p class="review-note">Las calificaciones se guardan solamente en este navegador y no representan reseñas verificadas.</p>
+        </div>
+      </div>
+    </div>`;
+  navigate("detalle");
+}
+function updateAccountNav() {
+  $("#accountNav").textContent = getUser() ? "Mi cuenta" : "Iniciar sesión";
+}
+function updateAccountPage() {
+  const user = getUser();
+  $("#authLayout").classList.toggle("hidden", !!user);
+  $("#accountDashboard").classList.toggle("hidden", !user);
+  $("#accountHeading").textContent = user ? "Tu espacio AgroRentas" : "Bienvenido a AgroRentas";
+  updateAccountNav();
+  if (user) renderMyListings();
+}
+function renderMyListings() {
+  const user = getUser();
+  if (!user) return;
+  const my = getOwnListings().filter(item => item.ownerId === user.id);
+  $("#myListingCount").textContent = my.length;
+  const ratings = Object.values(readJSON(KEYS.ratings, {})).flat().filter(r => r.userId === user.id);
+  $("#myRatingCount").textContent = ratings.length;
+  $("#dashboardName").textContent = user.name;
+  $("#dashboardRole").textContent = `${user.role} · ${user.email}`;
+  $("#myListings").innerHTML = my.length ? my.map(item => `
+    <article class="machine-card"><button class="machine-image" data-detail="${safeText(item.id)}">${item.image ? `<img src="${safeText(item.image)}" alt="${safeText(item.name)}">` : `<span class="fallback-emoji">🚜</span>`}<span class="type-badge">${safeText(item.type)}</span></button>
+    <div class="machine-body"><span class="availability ${item.availability === "Disponible" ? "" : "off"}">${safeText(item.availability)}</span><h3>${safeText(item.name)}</h3><p class="machine-owner">${safeText(item.location)}</p>
+    <div class="machine-foot"><button class="mini-button" data-detail="${safeText(item.id)}">Ver anuncio</button><button class="mini-button" data-toggle-listing="${safeText(item.id)}">${item.availability === "Disponible" ? "Marcar no disponible" : "Marcar disponible"}</button></div>
+    <div class="machine-foot"><button class="mini-button danger" data-delete-listing="${safeText(item.id)}">Eliminar anuncio</button></div></div></article>`).join("") :
+    `<div class="empty"><div>📋</div><h3>Aún no tienes publicaciones</h3><p>Publica una maquinaria para que aparezca en el catálogo.</p><button class="btn primary" data-page="publicar">Publicar maquinaria</button></div>`;
+}
+function setAuthMode(mode) {
+  authMode = mode;
+  $("#loginTab").classList.toggle("selected", mode === "login");
+  $("#registerTab").classList.toggle("selected", mode === "register");
+  $("#registerOnly").classList.toggle("hidden", mode !== "register");
+  $("#fullName").required = mode === "register";
+  $("#authPhone").required = mode === "register";
+  $("#authTitle").textContent = mode === "login" ? "Qué bueno verte" : "Crea tu cuenta";
+  $("#authSubtitle").textContent = mode === "login" ? "Ingresa tus datos para continuar." : "Completa tus datos para esta demostración.";
+  $("#authSubmit").textContent = mode === "login" ? "Iniciar sesión →" : "Crear cuenta →";
+  $("#authMessage").textContent = "";
+  $("#authMessage").classList.remove("error");
+}
+function message(selector, text, error = false) {
+  const el = $(selector);
+  el.textContent = text;
+  el.classList.toggle("error", error);
+}
+function authSubmit(event) {
+  event.preventDefault();
+  const email = $("#authEmail").value.trim().toLowerCase();
+  const password = $("#authPassword").value;
+  const users = getUsers();
+  if (authMode === "register") {
+    const name = $("#fullName").value.trim();
+    const phone = $("#authPhone").value.trim();
+    const role = $("#userRole").value;
+    if (!name || !phone || !email || !password) return message("#authMessage", "Completa los campos obligatorios.", true);
+    if (users.some(user => user.email === email)) return message("#authMessage", "Ya existe una cuenta con ese correo. Prueba iniciar sesión.", true);
+    const user = {id:"user-" + Date.now(), name, phone, role, email, password};
+    users.push(user);
+    if (!writeJSON(KEYS.users, users)) return;
+    writeJSON(KEYS.session, {id:user.id});
+    $("#authForm").reset();
+    updateAccountPage();
+    toast("Cuenta de demostración creada en este navegador.");
+  } else {
+    const user = users.find(item => item.email === email && item.password === password);
+    if (!user) return message("#authMessage", "No encontramos una cuenta con esos datos. Revisa o regístrate.", true);
+    writeJSON(KEYS.session, {id:user.id});
+    $("#authForm").reset();
+    updateAccountPage();
+    toast("Sesión iniciada en este navegador.");
+  }
+}
+function publishSubmit(event) {
+  event.preventDefault();
+  const user = getUser();
+  if (!user) { toast("Inicia sesión antes de publicar."); navigate("cuenta"); return; }
+  const data = new FormData(event.currentTarget);
+  const price = String(data.get("price") || "").trim();
+  const machine = {
+    id:"machine-" + Date.now(),
+    name:String(data.get("name") || "").trim(),
+    type:String(data.get("type") || ""),
+    specs:String(data.get("specs") || "").trim(),
+    location:String(data.get("location") || "").trim(),
+    price:price === "" ? null : Number(price),
+    period:String(data.get("period") || "día"),
+    availability:String(data.get("availability") || "Disponible"),
+    phone:String(data.get("phone") || "").trim(),
+    owner:user.name,
+    ownerId:user.id,
+    description:String(data.get("description") || "").trim(),
+    image:chosenPhoto,
+    sample:false,
+    createdAt:new Date().toISOString()
+  };
+  if (!machine.name || !machine.type || !machine.specs || !machine.location || !machine.phone) return message("#publishMessage", "Completa los campos obligatorios.", true);
+  const listings = getOwnListings();
+  listings.unshift(machine);
+  if (!writeJSON(KEYS.listings, listings)) return;
+  event.currentTarget.reset();
+  chosenPhoto = "";
+  message("#publishMessage", "Publicación guardada en este navegador. Ya aparece en el catálogo.");
+  renderCatalog(); renderFeatured(); updateAccountPage();
+  toast("Maquinaria publicada en la demostración.");
+  setTimeout(() => navigate("cuenta"), 700);
+}
+function loadPhoto(file) {
+  chosenPhoto = "";
+  if (!file) return;
+  if (!file.type.startsWith("image/")) { toast("Selecciona un archivo de imagen."); return; }
+  if (file.size > 900000) { toast("La imagen debe ser menor a 900 KB en esta demostración."); $("#photoInput").value = ""; return; }
+  const reader = new FileReader();
+  reader.onload = () => { chosenPhoto = String(reader.result || ""); };
+  reader.onerror = () => toast("No se pudo leer la fotografía.");
+  reader.readAsDataURL(file);
+}
+function contactMissing(id) {
+  const machine = getListings().find(item => item.id === id);
+  if (!machine) return;
+  if (machine.sample) return toast("Este anuncio es un ejemplo y no tiene teléfono real.");
+  const digits = String(machine.phone || "").replace(/\D/g, "");
+  if (digits.length < 8) return toast("El anuncio no tiene un teléfono válido.");
+  window.open("https://wa.me/" + digits + "?text=" + encodeURIComponent("Hola, vi tu maquinaria " + machine.name + " en AgroRentas y quisiera consultar las condiciones del alquiler."), "_blank", "noopener");
+}
+function rateMachine(id, stars) {
+  const user = getUser();
+  if (!user) { toast("Inicia sesión para calificar este anuncio."); navigate("cuenta"); return; }
+  const all = readJSON(KEYS.ratings, {});
+  const ratings = all[id] || [];
+  const index = ratings.findIndex(r => r.userId === user.id);
+  const item = {userId:user.id, stars:Number(stars), date:new Date().toISOString()};
+  if (index >= 0) ratings[index] = item; else ratings.push(item);
+  all[id] = ratings;
+  if (writeJSON(KEYS.ratings, all)) { openDetails(id); toast("Calificación de prueba guardada."); }
+}
+function toggleListing(id) {
+  const user = getUser();
+  const list = getOwnListings();
+  const index = list.findIndex(item => item.id === id);
+  if (!user || index < 0 || list[index].ownerId !== user.id) return toast("Solo puedes modificar tus propias publicaciones.");
+  list[index].availability = list[index].availability === "Disponible" ? "No disponible" : "Disponible";
+  if (writeJSON(KEYS.listings, list)) {
+    renderCatalog(); renderFeatured(); renderMyListings();
+    if (currentPage === "detalle") openDetails(id);
+    toast("Disponibilidad actualizada.");
+  }
+}
+function deleteListing(id) {
+  const user = getUser();
+  const item = getOwnListings().find(m => m.id === id);
+  if (!user || !item || item.ownerId !== user.id) return toast("No puedes eliminar este anuncio.");
+  if (!confirm("¿Seguro que quieres eliminar esta publicación?")) return;
+  if (writeJSON(KEYS.listings, getOwnListings().filter(m => m.id !== id))) {
+    renderCatalog(); renderFeatured(); renderMyListings(); toast("Publicación eliminada.");
+  }
+}
+function clearFilters() {
+  $("#catalogSearch").value = "";
+  $("#catalogType").value = "";
+  $("#catalogLocation").value = "";
+  $("#catalogAvailability").value = "";
+  renderCatalog();
+}
+
+document.addEventListener("click", event => {
+  const pageButton = event.target.closest("[data-page]");
+  const detailButton = event.target.closest("[data-detail]");
+  const contactButton = event.target.closest("[data-contact-missing]");
+  const rateButton = event.target.closest("[data-rate]");
+  const toggleButton = event.target.closest("[data-toggle-listing]");
+  const deleteButton = event.target.closest("[data-delete-listing]");
+  if (pageButton) { event.preventDefault(); navigate(pageButton.dataset.page); }
+  if (detailButton) openDetails(detailButton.dataset.detail);
+  if (contactButton) contactMissing(contactButton.dataset.contactMissing);
+  if (rateButton) rateMachine(rateButton.dataset.rateId, rateButton.dataset.rate);
+  if (toggleButton) toggleListing(toggleButton.dataset.toggleListing);
+  if (deleteButton) deleteListing(deleteButton.dataset.deleteListing);
+});
+
+$("#homeSearch").addEventListener("click", () => {
+  $("#catalogType").value = $("#homeType").value;
+  $("#catalogLocation").value = $("#homeLocation").value;
+  navigate("catalogo");
+  renderCatalog();
+});
+["catalogSearch","catalogLocation"].forEach(id => $("#" + id).addEventListener("input", renderCatalog));
+["catalogType","catalogAvailability"].forEach(id => $("#" + id).addEventListener("change", renderCatalog));
+$("#clearFilters").addEventListener("click", clearFilters);
+$("#emptyClear").addEventListener("click", clearFilters);
+$("#loginTab").addEventListener("click", () => setAuthMode("login"));
+$("#registerTab").addEventListener("click", () => setAuthMode("register"));
+$("#authForm").addEventListener("submit", authSubmit);
+$("#publishForm").addEventListener("submit", publishSubmit);
+$("#photoInput").addEventListener("change", event => loadPhoto(event.target.files[0]));
+$("#logoutButton").addEventListener("click", () => {
+  localStorage.removeItem(KEYS.session);
+  updateAccountPage();
+  toast("Sesión cerrada.");
+});
+$("#mobileMenu").addEventListener("click", () => $("#mainNav").classList.toggle("open"));
+
+function init() {
+  updateAccountNav();
+  renderFeatured();
+  renderCatalog();
+  updateAccountPage();
+  setAuthMode("login");
+}
+init();

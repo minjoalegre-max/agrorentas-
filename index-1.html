@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#104d38">
+<title>AgroRentas | Maquinaria agrícola en Comarapa</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="#" data-page="inicio"><span class="brand-icon">🌱</span><span>Agro<span class="brand-lime">Rentas</span><small>COMARAPA · SANTA CRUZ</small></span></a>
+  <button class="mobile-menu" id="mobileMenu" aria-label="Abrir menú">☰</button>
+  <nav id="mainNav">
+    <button class="nav-link active" data-page="inicio">Inicio</button>
+    <button class="nav-link" data-page="catalogo">Catálogo</button>
+    <button class="nav-link" data-page="publicar">Publicar maquinaria</button>
+    <button class="nav-link nav-cta" data-page="cuenta" id="accountNav">Iniciar sesión</button>
+  </nav>
+</header>
+<main>
+<section id="page-inicio" class="page">
+  <section class="hero">
+    <div class="hero-copy">
+      <span class="eyebrow"><i></i> UNA HERRAMIENTA PARA EL CAMPO</span>
+      <h1>La maquinaria que necesitas para hacer crecer tu campo.</h1>
+      <p>Encuentra información de equipos agrícolas y contacta directamente con sus propietarios en Comarapa.</p>
+      <div class="actions"><button class="btn lime" data-page="catalogo">Explorar maquinaria <b>→</b></button><button class="btn ghost" data-page="publicar">Publicar mi maquinaria</button></div>
+      <p class="hero-note">✓ Una búsqueda más ordenada, desde el celular o la computadora.</p>
+    </div>
+    <div class="hero-photo" role="img" aria-label="Paisaje agrícola"><div class="photo-label"><span>🚜</span><div><b>AgroRentas</b><small>Conectando el campo</small></div></div></div>
+  </section>
+  <section class="search-strip">
+    <div class="search-intro"><span class="search-symbol">⌕</span><div><b>¿Qué maquinaria necesitas?</b><small>Busca equipos en Comarapa</small></div></div>
+    <label>Tipo de maquinaria<select id="homeType"><option value="">Todos los tipos</option><option>Tractor</option><option>Cosechadora</option><option>Fumigadora</option><option>Sembradora</option><option>Camión</option><option>Otros</option></select></label>
+    <label>Ubicación<input id="homeLocation" placeholder="Ej. zona centro"></label>
+    <button class="btn primary" id="homeSearch">Buscar equipos →</button>
+  </section>
+  <section class="section">
+    <div class="section-title"><div><span class="eyebrow dark">ENCUENTRA TU EQUIPO</span><h2>Maquinaria destacada</h2><p>Consulta las opciones y revisa sus detalles antes de contactar.</p></div><button class="text-link" data-page="catalogo">Ver catálogo completo →</button></div>
+    <div class="machine-grid" id="featuredGrid"></div>
+  </section>
+  <section class="how-section">
+    <div class="section-title center"><div><span class="eyebrow dark">FÁCIL Y DIRECTO</span><h2>¿Cómo funciona?</h2><p>Tres pasos para encontrar una opción de maquinaria.</p></div></div>
+    <div class="steps">
+      <article><span class="step-icon">⌕</span><small>PASO 01</small><h3>Busca maquinaria</h3><p>Elige el tipo de equipo y revisa las opciones publicadas.</p></article>
+      <article><span class="step-icon wheat">▤</span><small>PASO 02</small><h3>Revisa los detalles</h3><p>Consulta características, ubicación aproximada y disponibilidad.</p></article>
+      <article><span class="step-icon blue">↗</span><small>PASO 03</small><h3>Contacta al dueño</h3><p>Comunícate para acordar directamente las condiciones del servicio.</p></article>
+    </div>
+  </section>
+  <section class="owner-banner"><div class="owner-emoji">🚜</div><div><span class="eyebrow">¿TIENES MAQUINARIA?</span><h2>Haz que más agricultores conozcan tus equipos.</h2><p>Publica la información de tu maquinaria para facilitar el contacto con personas interesadas.</p></div><button class="btn lime" data-page="publicar">Publicar equipo →</button></section>
+</section>
+
+<section id="page-catalogo" class="page hidden">
+  <section class="inner-hero"><div><span class="eyebrow">AGRORENTAS · COMARAPA</span><h1>Catálogo de maquinaria</h1><p>Encuentra equipos agrícolas y revisa su información antes de contactar al propietario.</p></div><div class="inner-art">🚜</div></section>
+  <section class="section">
+    <div class="catalog-title"><div><h2>Equipos publicados</h2><p id="catalogSummary">Explora las opciones disponibles.</p></div><span class="results" id="resultsCount">0 equipos</span></div>
+    <div class="filters">
+      <label>Buscar por nombre<input id="catalogSearch" placeholder="Ej. tractor, cosechadora..."></label>
+      <label>Tipo<select id="catalogType"><option value="">Todos los tipos</option><option>Tractor</option><option>Cosechadora</option><option>Fumigadora</option><option>Sembradora</option><option>Camión</option><option>Otros</option></select></label>
+      <label>Ubicación<input id="catalogLocation" placeholder="Comarapa"></label>
+      <label>Disponibilidad<select id="catalogAvailability"><option value="">Todas</option><option>Disponible</option><option>No disponible</option></select></label>
+      <button class="btn primary" id="clearFilters">Limpiar</button>
+    </div>
+    <div class="machine-grid" id="catalogGrid"></div>
+    <div id="catalogEmpty" class="empty hidden"><div>🔎</div><h3>No encontramos equipos con esos filtros</h3><p>Prueba otra búsqueda o limpia los filtros.</p><button class="btn primary" id="emptyClear">Ver todo el catálogo</button></div>
+    <p class="demo-note">Los anuncios iniciales y sus precios son ejemplos ilustrativos para probar la interfaz. Reemplázalos por datos confirmados de los propietarios.</p>
+  </section>
+</section>
+
+<section id="page-detalle" class="page hidden"><div class="section back"><button class="text-link" data-page="catalogo">← Volver al catálogo</button></div><div id="detailContent"></div></section>
+
+<section id="page-publicar" class="page hidden">
+  <section class="inner-hero"><div><span class="eyebrow">PARA PROPIETARIOS</span><h1>Publica tu maquinaria</h1><p>Comparte la información del equipo para que los agricultores puedan encontrarlo.</p></div><div class="inner-art">📋</div></section>
+  <section class="section form-layout">
+    <form id="publishForm" class="form-card">
+      <div class="form-heading"><span>🚜</span><div><h2>Datos de la maquinaria</h2><p>Completa los campos para preparar el anuncio.</p></div></div>
+      <div class="form-grid">
+        <label class="wide">Nombre del equipo *<input name="name" required maxlength="70" placeholder="Ej. Tractor agrícola"></label>
+        <label>Tipo de maquinaria *<select name="type" required><option value="">Selecciona un tipo</option><option>Tractor</option><option>Cosechadora</option><option>Fumigadora</option><option>Sembradora</option><option>Camión</option><option>Otros</option></select></label>
+        <label>Características principales *<input name="specs" required maxlength="100" placeholder="Ej. 75 HP, 4x4"></label>
+        <label>Ubicación aproximada *<input name="location" required maxlength="90" placeholder="Ej. Comarapa, zona sur"></label>
+        <label>Precio (Bs.)<input name="price" type="number" min="0" step="1" placeholder="Dejar vacío si es a convenir"></label>
+        <label>Periodo de cobro<select name="period"><option value="día">Por día</option><option value="hora">Por hora</option><option value="jornada">Por jornada</option><option value="acordar">A convenir</option></select></label>
+        <label>Disponibilidad *<select name="availability" required><option>Disponible</option><option>No disponible</option></select></label>
+        <label>Teléfono/WhatsApp *<input name="phone" required inputmode="tel" placeholder="Ej. 59170000000"></label>
+        <label class="wide">Descripción adicional<textarea name="description" rows="3" maxlength="500" placeholder="Estado del equipo, trabajo que realiza u otra información útil"></textarea></label>
+        <label class="wide">Fotografía del equipo<input id="photoInput" name="photo" type="file" accept="image/*"><small>Usa una foto ligera (máximo 900 KB para esta demostración).</small></label>
+      </div>
+      <div class="confirm"><input type="checkbox" id="confirmOwnership" required><label for="confirmOwnership">Confirmo que tengo permiso para publicar estos datos y compartir este contacto con personas interesadas.</label></div>
+      <button class="btn primary full-btn" type="submit">Guardar publicación →</button><p id="publishMessage" class="message"></p>
+    </form>
+    <aside class="side-note"><div>🌾</div><h3>Un anuncio claro ayuda</h3><p>Incluye características correctas, una ubicación aproximada y un teléfono autorizado. Mantén actualizada la disponibilidad.</p><hr><b>Importante</b><p>AgroRentas facilita el contacto; el acuerdo y las condiciones del alquiler se realizan directamente entre propietario y agricultor.</p></aside>
+  </section>
+</section>
+
+<section id="page-cuenta" class="page hidden">
+  <section class="inner-hero"><div><span class="eyebrow">TU ESPACIO AGRORENTAS</span><h1 id="accountHeading">Bienvenido</h1><p>Ingresa o crea una cuenta de demostración para administrar tus anuncios en este navegador.</p></div><div class="inner-art">👤</div></section>
+  <section id="authLayout" class="section auth-layout">
+    <div class="auth-intro"><span class="eyebrow dark">CREA TU CUENTA</span><h2>Una forma sencilla de conectarte con el campo.</h2><p>Los propietarios pueden registrar sus equipos y los agricultores pueden consultar su información y comunicarse directamente.</p><div class="benefit">✓ Publicaciones organizadas</div><div class="benefit">✓ Datos de contacto y disponibilidad</div><div class="benefit">✓ Acceso desde computadora o celular</div></div>
+    <form id="authForm" class="form-card auth-card">
+      <div class="auth-tabs"><button type="button" id="loginTab" class="selected">Iniciar sesión</button><button type="button" id="registerTab">Registrarme</button></div>
+      <h2 id="authTitle">Qué bueno verte</h2><p id="authSubtitle">Ingresa tus datos para continuar.</p>
+      <div id="registerOnly" class="hidden">
+        <label>Nombre completo *<input id="fullName" maxlength="90" placeholder="Tu nombre"></label>
+        <label>Teléfono *<input id="authPhone" inputmode="tel" placeholder="Tu número de contacto"></label>
+        <label>Tipo de usuario<select id="userRole"><option>Agricultor</option><option>Propietario de maquinaria</option></select></label>
+      </div>
+      <label>Correo electrónico *<input type="email" id="authEmail" required placeholder="nombre@correo.com"></label>
+      <label>Contraseña *<input type="password" id="authPassword" required minlength="4" placeholder="Mínimo 4 caracteres"></label>
+      <button class="btn primary full-btn" id="authSubmit" type="submit">Iniciar sesión →</button>
+      <p id="authMessage" class="message"></p><p class="security-note">Demostración local: no uses contraseñas reales. Para una plataforma pública hace falta un sistema de acceso seguro.</p>
+    </form>
+  </section>
+  <section id="accountDashboard" class="section hidden">
+    <div class="dashboard-head"><div><span class="eyebrow dark">MI CUENTA</span><h2 id="dashboardName">Usuario</h2><p id="dashboardRole"></p></div><button id="logoutButton" class="btn secondary">Cerrar sesión</button></div>
+    <div class="stat-row"><div><b id="myListingCount">0</b><small>Mis publicaciones</small></div><div><b id="myRatingCount">0</b><small>Calificaciones dadas</small></div></div>
+    <div class="section-title"><div><h2>Mis publicaciones</h2><p>Administra tus anuncios creados en este navegador.</p></div><button class="btn primary" data-page="publicar">Añadir maquinaria +</button></div>
+    <div id="myListings" class="machine-grid"></div>
+  </section>
+</section>
+</main>
+
+<footer>
+  <div class="footer-top"><a class="brand footer-brand" href="#" data-page="inicio"><span class="brand-icon">🌱</span><span>Agro<span class="brand-lime">Rentas</span><small>COMARAPA · SANTA CRUZ</small></span></a><p>Una plataforma para facilitar la búsqueda de maquinaria agrícola y el contacto entre productores y propietarios.</p><div class="footer-nav"><button data-page="inicio">Inicio</button><button data-page="catalogo">Catálogo</button><button data-page="publicar">Publicar maquinaria</button></div></div>
+  <div class="footer-bottom"><span>© 2026 AgroRentas · Proyecto de Sistemas Informáticos</span><span>Los acuerdos de alquiler se realizan directamente entre las partes.</span></div>
+</footer>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="script.js"></script>
+</body>
+</html>
